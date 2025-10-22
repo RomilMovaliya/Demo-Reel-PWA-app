@@ -2,6 +2,11 @@
 
 A modern Instagram-like reel application built with Next.js 15 and PWA capabilities. Features seamless video playback with smart background/foreground handling and intuitive touch controls.
 
+## 🎬 Demo
+Check out how it works:
+
+![Demo Reel PWA App](https://github.com/RomilMovaliya/Demo-Reel-PWA-app/blob/main/demo_reel_app.gif)
+
 ## ✨ Features
 
 - **📱 PWA Ready**: Install on any device for native app experience
