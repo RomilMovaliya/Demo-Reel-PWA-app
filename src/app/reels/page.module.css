@@ -1,0 +1,97 @@
+.reelsPage {
+  width: 100%;
+  height: 100vh;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+}
+
+.loadingContainer,
+.errorContainer,
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #000;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loadingContainer p,
+.errorContainer p,
+.emptyContainer p {
+  font-size: 16px;
+  opacity: 0.8;
+  margin: 10px 0;
+}
+
+.errorContainer h2,
+.emptyContainer h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.retryButton {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: all 0.2s ease;
+}
+
+.retryButton:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+.retryButton:active {
+  transform: translateY(0);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .loadingContainer,
+  .errorContainer,
+  .emptyContainer {
+    padding: 16px;
+  }
+  
+  .errorContainer h2,
+  .emptyContainer h2 {
+    font-size: 20px;
+  }
+  
+  .loadingContainer p,
+  .errorContainer p,
+  .emptyContainer p {
+    font-size: 14px;
+  }
+  
+  .retryButton {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
