@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ReelsContainer from '../components/ReelsContainer';
 import { ReelData } from '@/types/reel';
 import styles from './page.module.css';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Sample data - replace with your API call
 const sampleReels: ReelData[] = [
@@ -160,8 +161,10 @@ export default function ReelsPage() {
   }
 
   return (
-    <div className={styles.reelsPage}>
-      <ReelsContainer reels={reels} />
-    </div>
+    <ProtectedRoute>
+      <div className={styles.reelsPage}>
+        <ReelsContainer reels={reels} />
+      </div>
+    </ProtectedRoute>
   );
 }

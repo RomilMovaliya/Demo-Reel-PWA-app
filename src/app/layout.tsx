@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
+import AmplifyProvider from "@/components/AmplifyProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import ConfigCheck from "@/components/ConfigCheck";
+import RouteGuard from "@/components/RouteGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +30,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        <ConfigCheck />
+        <ErrorBoundary>
+          <AmplifyProvider>
+            <AuthProvider>
+              <RouteGuard>
+                {children}
+              </RouteGuard>
+            </AuthProvider>
+          </AmplifyProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
