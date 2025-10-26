@@ -1,0 +1,39 @@
+# Exclude development dependencies and files
+node_modules/**
+!node_modules/aws-sdk/**
+!node_modules/uuid/**
+
+# Exclude Next.js files
+.next/**
+out/**
+build/**
+
+# Exclude source files not needed for deployment
+src/**
+public/**
+styles/**
+
+# Exclude development files
+*.md
+*.html
+test-*
+scripts/**
+.env.local.example
+.gitignore
+.eslintrc*
+next.config.ts
+tailwind.config.ts
+tsconfig.json
+postcss.config.js
+
+# Exclude IDE files
+.vscode/**
+.idea/**
+
+# Exclude logs
+*.log
+logs/**
+
+# Exclude cache
+.cache/**
+.turbo/**

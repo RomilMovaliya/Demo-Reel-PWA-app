@@ -1,0 +1,514 @@
+service: reel-crud-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: dev
+  environment:
+    DYNAMODB_TABLE: reels_table
+    S3_BUCKET: reels-media-bucket
+    CLOUDFRONT_DOMAIN: !GetAtt ReelsCloudFrontDistribution.DomainName
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:DeleteObject
+      Resource: arn:aws:s3:::${self:provider.environment.S3_BUCKET}/*
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource: arn:aws:s3:::${self:provider.environment.S3_BUCKET}
+
+functions:
+  getPresignedUrl:
+    handler: handlers/getPresignedUrl.handler
+    events:
+      - http:
+          path: reels/presigned-url
+          method: post
+          cors: true
+
+  createReel:
+    handler: handlers/reelCreate.handler
+    events:
+      - http:
+          path: reels
+          method: post
+          cors: true
+
+  getReel:
+    handler: handlers/reelGet.handler
+    events:
+      - http:
+          path: reels/{uuid}
+          method: get
+          cors: true
+
+  listReels:
+    handler: handlers/reelList.handler
+    events:
+      - http:
+          path: reels
+          method: get
+          cors: true
+
+  updateReel:
+    handler: handlers/reelUpdate.handler
+    events:
+      - http:
+          path: reels/{uuid}
+          method: put
+          cors: true
+
+  deleteReel:
+    handler: handlers/reelDelete.handler
+    events:
+      - http:
+          path: reels/{uuid}
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    ReelsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: uuid
+            AttributeType: S
+        KeySchema:
+          - AttributeName: uuid
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    ReelsMediaBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_BUCKET}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              AllowedOrigins:
+                - "*"
+              ExposedHeaders:
+                - ETag
+              MaxAge: 3000
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
+    ReelsMediaBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref ReelsMediaBucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: !Sub 'arn:aws:s3:::${ReelsMediaBucket}/*'
+            - Sid: CloudFrontOriginAccess
+              Effect: Allow
+              Principal:
+                AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}'
+              Action: 's3:GetObject'
+              Resource: !Sub 'arn:aws:s3:::${ReelsMediaBucket}/*'
+
+    # CloudFront Origin Access Identity
+    CloudFrontOriginAccessIdentity:
+      Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: !Sub 'OAI for ${self:service}-${self:provider.stage}'
+
+    # CloudFront Distribution
+    ReelsCloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Origins:
+            - DomainName: !GetAtt ReelsMediaBucket.RegionalDomainName
+              Id: S3Origin
+              S3OriginConfig:
+                OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+          Enabled: true
+          Comment: !Sub 'CloudFront Distribution for ${self:service}-${self:provider.stage}'
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - GET
+              - HEAD
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingEnabled
+            OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # Managed-CORS-S3Origin
+          PriceClass: PriceClass_100 # Use only North America and Europe edge locations for cost optimization
+          ViewerCertificate:
+            CloudFrontDefaultCertificate: true
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3001
+    host: localhost
+  
+package:
+    patterns:
+      - '!node_modules/**'
+      - 'node_modules/aws-sdk/**'
+      - 'node_modules/uuid/**'
+      - '!src/**'
+      - '!.next/**'
+      - '!public/**'
+      - '!scripts/**'
+      - '!*.md'
+      - '!*.html'
+      - '!test-*'
+      - 'handlers/**'
+
+# service: reel-crud-api
+
+# provider:
+#   name: aws
+#   runtime: nodejs18.x
+#   region: ap-south-1
+#   stage: dev
+#   environment:
+#     DYNAMODB_TABLE: reels_table
+#     S3_BUCKET: reels-media-bucket
+
+#     CLOUDFRONT_DOMAIN: !GetAtt ReelsCloudFrontDistribution.DomainName
+
+#   iamRoleStatements:
+#     - Effect: Allow
+#       Action:
+#         - dynamodb:Query
+#         - dynamodb:Scan
+#         - dynamodb:GetItem
+#         - dynamodb:PutItem
+#         - dynamodb:UpdateItem
+#         - dynamodb:DeleteItem
+#       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}
+#     - Effect: Allow
+#       Action:
+#         - dax:Query
+#         - dax:Scan
+#         - dax:GetItem
+#         - dax:PutItem
+#         - dax:UpdateItem
+#         - dax:DeleteItem
+#         - dax:BatchGetItem
+#         - dax:BatchWriteItem
+#       Resource: arn:aws:dax:${self:provider.region}:*:cache/*
+#     - Effect: Allow
+#       Action:
+#         - s3:PutObject
+#         - s3:GetObject
+#         - s3:DeleteObject
+#       Resource: arn:aws:s3:::${self:provider.environment.S3_BUCKET}/*
+#     - Effect: Allow
+#       Action:
+#         - s3:ListBucket
+#       Resource: arn:aws:s3:::${self:provider.environment.S3_BUCKET}
+
+# functions:
+#   getPresignedUrl:
+#     handler: handlers/getPresignedUrl.handler
+#     events:
+#       - http:
+#           path: reels/presigned-url
+#           method: post
+#           cors: true
+
+#   createReel:
+#     handler: handlers/reelCreate.handler
+#     events:
+#       - http:
+#           path: reels
+#           method: post
+#           cors: true
+
+#   getReel:
+#     handler: handlers/reelGet.handler
+#     events:
+#       - http:
+#           path: reels/{uuid}
+#           method: get
+#           cors: true
+
+#   listReels:
+#     handler: handlers/reelList.handler
+#     events:
+#       - http:
+#           path: reels
+#           method: get
+#           cors: true
+
+#   updateReel:
+#     handler: handlers/reelUpdate.handler
+#     events:
+#       - http:
+#           path: reels/{uuid}
+#           method: put
+#           cors: true
+
+#   deleteReel:
+#     handler: handlers/reelDelete.handler
+#     events:
+#       - http:
+#           path: reels/{uuid}
+#           method: delete
+#           cors: true
+
+# resources:
+#   Resources:
+#     ReelsTable:
+#       Type: AWS::DynamoDB::Table
+#       Properties:
+#         TableName: ${self:provider.environment.DYNAMODB_TABLE}
+#         AttributeDefinitions:
+#           - AttributeName: uuid
+#             AttributeType: S
+#         KeySchema:
+#           - AttributeName: uuid
+#             KeyType: HASH
+#         BillingMode: PAY_PER_REQUEST
+
+#     ReelsMediaBucket:
+#       Type: AWS::S3::Bucket
+#       Properties:
+#         BucketName: ${self:provider.environment.S3_BUCKET}
+#         CorsConfiguration:
+#           CorsRules:
+#             - AllowedHeaders:
+#                 - "*"
+#               AllowedMethods:
+#                 - GET
+#                 - PUT
+#                 - POST
+#                 - DELETE
+#                 - HEAD
+#               AllowedOrigins:
+#                 - "*"
+#               ExposedHeaders:
+#                 - ETag
+#               MaxAge: 3000
+#         PublicAccessBlockConfiguration:
+#           BlockPublicAcls: false
+#           BlockPublicPolicy: false
+#           IgnorePublicAcls: false
+#           RestrictPublicBuckets: false
+
+#     ReelsMediaBucketPolicy:
+#       Type: AWS::S3::BucketPolicy
+#       Properties:
+#         Bucket: !Ref ReelsMediaBucket
+#         PolicyDocument:
+#           Version: '2012-10-17'
+#           Statement:
+#             - Sid: PublicReadGetObject
+#               Effect: Allow
+#               Principal: '*'
+#               Action: 's3:GetObject'
+#               Resource: !Sub 'arn:aws:s3:::${ReelsMediaBucket}/*'
+#             - Sid: CloudFrontOriginAccess
+#               Effect: Allow
+#               Principal:
+#                 AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}'
+#               Action: 's3:GetObject'
+#               Resource: !Sub 'arn:aws:s3:::${ReelsMediaBucket}/*'
+
+#     # CloudFront Origin Access Identity
+#     CloudFrontOriginAccessIdentity:
+#       Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+#       Properties:
+#         CloudFrontOriginAccessIdentityConfig:
+#           Comment: !Sub 'OAI for ${self:service}-${self:provider.stage}'
+
+#     # CloudFront Distribution
+#     ReelsCloudFrontDistribution:
+#       Type: AWS::CloudFront::Distribution
+#       Properties:
+#         DistributionConfig:
+#           Origins:
+#             - DomainName: !GetAtt ReelsMediaBucket.RegionalDomainName
+#               Id: S3Origin
+#               S3OriginConfig:
+#                 OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+#           Enabled: true
+#           Comment: !Sub 'CloudFront Distribution for ${self:service}-${self:provider.stage}'
+#           DefaultCacheBehavior:
+#             AllowedMethods:
+#               - GET
+#               - HEAD
+#               - OPTIONS
+#             TargetOriginId: S3Origin
+#             ViewerProtocolPolicy: redirect-to-https
+#             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingEnabled
+#             OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # Managed-CORS-S3Origin
+#           PriceClass: PriceClass_100 # Use only North America and Europe edge locations for cost optimization
+#           ViewerCertificate:
+#             CloudFrontDefaultCertificate: true
+
+#     # DynamoDB Accelerator (DAX) Subnet Group
+#     ReelsDaxSubnetGroup:
+#       Type: AWS::DAX::SubnetGroup
+#       Properties:
+#         SubnetGroupName: !Sub '${self:service}-${self:provider.stage}-dax-subnet-group'
+#         Description: 'Subnet group for DAX cluster'
+#         SubnetIds:
+#           - !Ref DaxSubnet1
+#           - !Ref DaxSubnet2
+
+#     # VPC for DAX (required)
+#     DaxVPC:
+#       Type: AWS::EC2::VPC
+#       Properties:
+#         CidrBlock: 10.0.0.0/16
+#         EnableDnsHostnames: true
+#         EnableDnsSupport: true
+#         Tags:
+#           - Key: Name
+#             Value: !Sub '${self:service}-${self:provider.stage}-dax-vpc'
+
+#     # Subnets for DAX
+#     DaxSubnet1:
+#       Type: AWS::EC2::Subnet
+#       Properties:
+#         VpcId: !Ref DaxVPC
+#         CidrBlock: 10.0.1.0/24
+#         AvailabilityZone: !Select [0, !GetAZs '']
+#         Tags:
+#           - Key: Name
+#             Value: !Sub '${self:service}-${self:provider.stage}-dax-subnet-1'
+
+#     DaxSubnet2:
+#       Type: AWS::EC2::Subnet
+#       Properties:
+#         VpcId: !Ref DaxVPC
+#         CidrBlock: 10.0.2.0/24
+#         AvailabilityZone: !Select [1, !GetAZs '']
+#         Tags:
+#           - Key: Name
+#             Value: !Sub '${self:service}-${self:provider.stage}-dax-subnet-2'
+
+#     # Security Group for DAX
+#     DaxSecurityGroup:
+#       Type: AWS::EC2::SecurityGroup
+#       Properties:
+#         GroupDescription: 'Security group for DAX cluster'
+#         VpcId: !Ref DaxVPC
+#         SecurityGroupIngress:
+#           - IpProtocol: tcp
+#             FromPort: 8111
+#             ToPort: 8111
+#             SourceSecurityGroupId: !Ref LambdaSecurityGroup
+#         Tags:
+#           - Key: Name
+#             Value: !Sub '${self:service}-${self:provider.stage}-dax-sg'
+
+#     # Security Group for Lambda functions
+#     LambdaSecurityGroup:
+#       Type: AWS::EC2::SecurityGroup
+#       Properties:
+#         GroupDescription: 'Security group for Lambda functions'
+#         VpcId: !Ref DaxVPC
+#         SecurityGroupEgress:
+#           - IpProtocol: -1
+#             CidrIp: 0.0.0.0/0
+#         Tags:
+#           - Key: Name
+#             Value: !Sub '${self:service}-${self:provider.stage}-lambda-sg'
+
+#     # DAX IAM Role
+#     DaxServiceRole:
+#       Type: AWS::IAM::Role
+#       Properties:
+#         AssumeRolePolicyDocument:
+#           Version: '2012-10-17'
+#           Statement:
+#             - Effect: Allow
+#               Principal:
+#                 Service: dax.amazonaws.com
+#               Action: sts:AssumeRole
+#         Policies:
+#           - PolicyName: DaxClusterAccessPolicy
+#             PolicyDocument:
+#               Version: '2012-10-17'
+#               Statement:
+#                 - Effect: Allow
+#                   Action:
+#                     - dynamodb:DescribeTable
+#                     - dynamodb:ListTables
+#                     - dynamodb:GetItem
+#                     - dynamodb:Query
+#                     - dynamodb:Scan
+#                     - dynamodb:PutItem
+#                     - dynamodb:UpdateItem
+#                     - dynamodb:DeleteItem
+#                   Resource: "*"
+#                 - Effect: Allow
+#                   Action:
+#                     - cloudwatch:PutMetricData
+#                   Resource: "*"
+
+#     # DynamoDB Accelerator (DAX) Cluster
+#     ReelsDaxCluster:
+#       Type: AWS::DAX::Cluster
+#       Properties:
+#         ClusterName: !Sub '${self:service}-${self:provider.stage}-dax-cluster'
+#         Description: 'DAX cluster for reels table'
+#         IAMRoleArn: !GetAtt DaxServiceRole.Arn
+#         NodeType: dax.t3.small # Cost-effective node type
+#         ReplicationFactor: 1 # Single node for cost optimization (increase for production)
+#         SubnetGroupName: !Ref ReelsDaxSubnetGroup
+#         SecurityGroupIds:
+#           - !Ref DaxSecurityGroup
+#         ParameterGroupName: default.dax1.0
+
+# plugins:
+#   - serverless-offline
+
+# custom:
+#   serverless-offline:
+#     httpPort: 3001
+#     host: localhost
+  
+# package:
+#     patterns:
+#       - '!node_modules/**'
+#       - 'node_modules/aws-sdk/**'
+#       - 'node_modules/uuid/**'
+#       - 'node_modules/amazon-dax-client/**'
+#       - '!src/**'
+#       - '!.next/**'
+#       - '!public/**'
+#       - '!scripts/**'
+#       - '!*.md'
+#       - '!*.html'
+#       - '!test-*'
+#       - 'handlers/**'

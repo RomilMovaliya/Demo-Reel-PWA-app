@@ -14,7 +14,15 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['react-swipeable']
-  }
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:3001/:path*', // Proxy to serverless offline
+      },
+    ]
+  },
 };
 
 const pwaConfig = withPWA({
@@ -48,4 +56,4 @@ const pwaConfig = withPWA({
   ],
 });
 
-export default pwaConfig(nextConfig);
+export default pwaConfig(nextConfig as any);

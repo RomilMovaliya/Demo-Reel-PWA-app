@@ -25,8 +25,8 @@ export default function VideoPlayer({ reel, isActive, onVideoEnd }: VideoPlayerP
       <video
         ref={videoRef}
         className={styles.video}
-        src={reel.videoUrl}
-        poster={reel.thumbnail}
+        src={reel.video_url}
+        poster={reel.profile_image_url}
         loop
         muted={isMuted}
         playsInline
@@ -46,17 +46,17 @@ export default function VideoPlayer({ reel, isActive, onVideoEnd }: VideoPlayerP
       {/* Video Info Overlay */}
       <div className={styles.videoInfo}>
         <div className={styles.userInfo}>
-          {reel.author?.avatar && (
+        
             <img 
-              src={reel.author.avatar} 
-              alt={reel.author.name}
+              src={reel.profile_image_url || 'https://t4.ftcdn.net/jpg/02/29/75/83/360_F_229758328_7x8jwCwjtBMmC6rgFzLFhZoEpLobB6L8.jpg'} 
+              alt={reel.username}
               className={styles.avatar}
             />
-          )}
+          
           <div className={styles.userDetails}>
-            <h3 className={styles.username}>@{reel.author?.username}</h3>
-            {reel.title && <p className={styles.title}>{reel.title}</p>}
-            {reel.description && <p className={styles.description}>{reel.description}</p>}
+            <h1 className='font-bold'>{reel.username}</h1>
+            {reel.description && <h1>{reel.description}</h1>}
+            {reel.tags && <p className='text-sm' >{reel.tags.join(', ')}</p>}
           </div>
         </div>
         
@@ -72,7 +72,7 @@ export default function VideoPlayer({ reel, isActive, onVideoEnd }: VideoPlayerP
             <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
               <path d="M21 6h-2l-1.27-1.27c-.4-.4-.86-.73-1.73-.73H8c-.87 0-1.33.33-1.73.73L5 6H3c-.55 0-1 .45-1 1s.45 1 1 1h1v11c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8h1c.55 0 1-.45 1-1s-.45-1-1-1zM8 19c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1s1 .45 1 1v9c0 .55-.45 1-1 1zm4 0c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1s1 .45 1 1v9c0 .55-.45 1-1 1zm4 0c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1s1 .45 1 1v9c0 .55-.45 1-1 1z"/>
             </svg>
-            <span>{reel.comments || 0}</span>
+            <span>{reel.views || 0}</span>
           </button>
           
           <button className={styles.actionButton}>
@@ -87,7 +87,7 @@ export default function VideoPlayer({ reel, isActive, onVideoEnd }: VideoPlayerP
       {/* Sound Control Button */}
       <div className={styles.soundControl}>
         <button 
-          className={styles.soundButton}
+          className={`${styles.soundButton} ${isMuted ? styles.muted : styles.unmuted}`}
           onClick={toggleMute}
           aria-label={isMuted ? 'Unmute video' : 'Mute video'}
         >
@@ -103,6 +103,11 @@ export default function VideoPlayer({ reel, isActive, onVideoEnd }: VideoPlayerP
             </svg>
           )}
         </button>
+        {/* {isMuted && (
+          <div className={styles.muteIndicator}>
+            <span>Tap to unmute</span>
+          </div>
+        )} */}
       </div>
       
       {/* Long Press Pause Indicator */}

@@ -47,26 +47,38 @@ export const useVideoControl = ({ isActive, onVideoEnd }: UseVideoControlProps) 
         if (isActive && !document.hidden) {
             // Reset video to start when becoming active
             videoRef.current.currentTime = 0;
+            setCurrentTime(0);
+            setIsPlaying(false);
+            setIsPaused(false);
+            
+            // Try to play with sound first
             videoRef.current.play().then(() => {
                 setIsPlaying(true);
                 setIsPaused(false);
+                console.log('Video playing with sound');
             }).catch((error) => {
-                // If autoplay fails with sound, try muted autoplay
                 console.log('Autoplay with sound failed, trying muted:', error);
+                // If autoplay fails with sound, try muted autoplay
                 if (!videoRef.current!.muted) {
                     videoRef.current!.muted = true;
                     setIsMuted(true);
                     videoRef.current!.play().then(() => {
                         setIsPlaying(true);
                         setIsPaused(false);
-                    }).catch(console.error);
+                        console.log('Video playing muted due to browser restrictions');
+                    }).catch((mutedError) => {
+                        console.error('Even muted autoplay failed:', mutedError);
+                        setIsPlaying(false);
+                    });
                 }
             });
         } else {
             videoRef.current.pause();
             setIsPlaying(false);
+            setIsPaused(true);
             // Reset video to start when becoming inactive
             videoRef.current.currentTime = 0;
+            setCurrentTime(0);
             // Clear any long press state when video becomes inactive
             setIsLongPressing(false);
             if (longPressTimer.current) {
@@ -75,6 +87,32 @@ export const useVideoControl = ({ isActive, onVideoEnd }: UseVideoControlProps) 
             }
         }
     }, [isActive]);
+
+    // Cleanup effect to reset state when component unmounts or video changes
+    useEffect(() => {
+        return () => {
+            // Cleanup when component unmounts
+            if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
+            setIsLongPressing(false);
+            setIsPlaying(false);
+            setIsPaused(false);
+            setCurrentTime(0);
+        };
+    }, []);
+
+    // Reset video state when video source changes
+    useEffect(() => {
+        if (videoRef.current) {
+            setCurrentTime(0);
+            setDuration(0);
+            setIsPlaying(false);
+            setIsPaused(false);
+            setIsLongPressing(false);
+        }
+    }, [videoRef.current?.src]);
 
     // Prevent context menu
     const handleContextMenu = useCallback((e: React.MouseEvent) => {
@@ -146,7 +184,17 @@ export const useVideoControl = ({ isActive, onVideoEnd }: UseVideoControlProps) 
         const newMutedState = !isMuted;
         videoRef.current.muted = newMutedState;
         setIsMuted(newMutedState);
-    }, [isMuted]);
+        
+        // If unmuting, try to play the video
+        if (!newMutedState && isActive) {
+            videoRef.current.play().catch((error) => {
+                console.log('Play failed after unmuting:', error);
+                // If play fails, mute again
+                videoRef.current!.muted = true;
+                setIsMuted(true);
+            });
+        }
+    }, [isMuted, isActive]);
 
     return {
         videoRef,

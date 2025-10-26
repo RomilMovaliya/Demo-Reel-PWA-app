@@ -4,18 +4,35 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:full": "node scripts/dev.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "serverless deploy",
+    "remove": "serverless remove",
+    "logs": "serverless logs -f",
+    "sls:offline": "serverless offline",
+    "sls:start": "serverless offline start",
+    "deploy:resources": "serverless deploy --config serverless-resources.yml --stage dev",
+    "deploy:functions": "serverless deploy --stage dev"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
+    "amazon-dax-client": "^1.2.10",
+    "autoprefixer": "^10.4.21",
+    "aws-sdk": "^2.1490.0",
+    "formik": "^2.4.6",
     "next": "15.5.6",
     "next-pwa": "^5.6.0",
+    "postcss": "^8.5.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-player": "^3.3.3",
     "react-swipeable": "^7.0.2",
-    "sharp": "^0.34.4"
+    "sharp": "^0.34.4",
+    "tailwindcss": "^4.1.16",
+    "uuid": "^9.0.1",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -23,8 +40,11 @@
     "@types/next-pwa": "^5.6.9",
     "@types/node": "^20",
     "@types/react": "^19.2.2",
+    "@types/uuid": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.6",
+    "serverless": "^3.38.0",
+    "serverless-offline": "^13.3.0",
     "typescript": "^5.9.3"
   }
 }

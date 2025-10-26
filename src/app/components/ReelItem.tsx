@@ -11,6 +11,7 @@ export default function ReelItem({ reel, isActive, onVideoEnd, index }: ReelItem
       data-index={index}
     >
       <VideoPlayer 
+        key={`${reel.uuid}-${index}`} // Force re-mount when switching videos
         reel={reel} 
         isActive={isActive} 
         onVideoEnd={onVideoEnd}

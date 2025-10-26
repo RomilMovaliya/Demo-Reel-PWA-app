@@ -170,6 +170,47 @@
   transform: scale(0.95);
 }
 
+.soundButton.muted {
+  background: rgba(255, 0, 0, 0.3);
+  border: 2px solid rgba(255, 0, 0, 0.5);
+}
+
+.soundButton.unmuted {
+  background: rgba(0, 255, 0, 0.3);
+  border: 2px solid rgba(0, 255, 0, 0.5);
+}
+
+.muteIndicator {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  animation: fadeInUp 0.3s ease-out;
+  pointer-events: none;
+}
+
+.muteIndicator span {
+  display: block;
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .videoInfo {

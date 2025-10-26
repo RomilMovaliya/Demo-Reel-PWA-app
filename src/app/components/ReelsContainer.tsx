@@ -85,10 +85,10 @@ export default function ReelsContainer({ reels }: ReelsContainerProps) {
         const scrollTop = container.scrollTop;
         const newIndex = Math.round(scrollTop / window.innerHeight);
         
-        if (newIndex !== currentIndex && newIndex >= 0 && newIndex < reels.length) {
+        if (newIndex !== activeVideoIndex && newIndex >= 0 && newIndex < reels.length) {
           setActiveVideoIndex(newIndex);
         }
-      }, 150);
+      }, 100); // Reduced timeout for more responsive updates
     };
 
     container.addEventListener('scroll', handleScroll);
@@ -96,7 +96,7 @@ export default function ReelsContainer({ reels }: ReelsContainerProps) {
       container.removeEventListener('scroll', handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, [currentIndex, reels.length]);
+  }, [activeVideoIndex, reels.length]);
 
   return (
     <div 
@@ -108,7 +108,7 @@ export default function ReelsContainer({ reels }: ReelsContainerProps) {
     >
       {reels.map((reel, index) => (
         <ReelItem
-          key={reel.id}
+          key={reel.uuid}
           reel={reel}
           index={index}
           isActive={index === activeVideoIndex}
